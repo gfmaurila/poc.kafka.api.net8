@@ -52,7 +52,7 @@ public class AlterarProdutoConsumer : BackgroundService
                 using (var scope = _serviceScopeFactory.CreateScope())
                 {
                     var produtoService = scope.ServiceProvider.GetRequiredService<IProdutoService>();
-                    await produtoService.Post(model);
+                    await produtoService.Put(model);
                 }
 
                 _logger.LogInformation($"Mensagem consumida do tópico {_topic}: {consumeResult.Message.Value}");
