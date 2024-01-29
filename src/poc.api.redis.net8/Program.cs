@@ -19,8 +19,8 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Conn
 
 // Bus
 builder.Services.AddHostedService<CriarProdutoConsumer>();
-//builder.Services.AddHostedService<AlterarProdutoConsumer>();
-//builder.Services.AddHostedService<RemoverProdutoConsumer>();
+builder.Services.AddHostedService<AlterarProdutoConsumer>();
+builder.Services.AddHostedService<RemoverProdutoConsumer>();
 
 // Repository
 builder.Services.AddScoped<IProdutoService, ProdutoService>();

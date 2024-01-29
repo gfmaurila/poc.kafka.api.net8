@@ -1,72 +1,69 @@
-﻿using poc.api.redis.Model;
+﻿using Confluent.Kafka;
+using poc.api.redis.Model;
 using poc.api.redis.Service.Persistence;
-using RabbitMQ.Client.Events;
-using RabbitMQ.Client;
-using System.Text;
 using System.Text.Json;
-
 namespace poc.api.redis.Service.Consumers;
 
 public class AlterarProdutoConsumer : BackgroundService
 {
-    private readonly IConnection _connection;
-    private readonly IModel _channel;
-    private readonly IServiceProvider _serviceProvider;
-    private const string QUEUE_NAME = "ALTERAR_PRODUTO";
-    private readonly IConfiguration _configuration;
+    private readonly string _topic;
+    private readonly ConsumerConfig _config;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger<AlterarProdutoConsumer> _logger;
 
-    public AlterarProdutoConsumer(IServiceProvider servicesProvider, IConfiguration configuration, ILogger<AlterarProdutoConsumer> logger)
+    public AlterarProdutoConsumer(IConfiguration configuration, ILogger<AlterarProdutoConsumer> logger, IServiceScopeFactory serviceScopeFactory)
     {
-        _serviceProvider = servicesProvider;
-        _configuration = configuration;
-
-        var factory = new ConnectionFactory
+        _config = new ConsumerConfig
         {
-            HostName = _configuration["RabbitMQConnection:Host"],
-            UserName = _configuration["RabbitMQConnection:Username"],
-            Password = _configuration["RabbitMQConnection:Password"]
+            BootstrapServers = configuration["Kafka:BootstrapServers"],
+            GroupId = configuration["Kafka:GroupId:Produto"],
+            AutoOffsetReset = AutoOffsetReset.Earliest
         };
-
-        _connection = factory.CreateConnection();
-        _channel = _connection.CreateModel();
-
-        _channel.QueueDeclare(
-            queue: QUEUE_NAME,
-            durable: false,
-            exclusive: false,
-            autoDelete: false,
-            arguments: null);
+        _topic = configuration["Kafka:Topic:Produto:AlterarProduto"];
         _logger = logger;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Consumer > ExecuteAsync > Produto > ALTERAR_PRODUTO > ExecuteAsync - Redis...");
-        var consumer = new EventingBasicConsumer(_channel);
-        consumer.Received += async (sender, eventArgs) =>
+        _logger.LogInformation("Consumer > ExecuteAsync > Produto > ALTERAR_PRODUTO > Redis...");
+        using var consumer = new ConsumerBuilder<Ignore, string>(_config).Build();
+        consumer.Subscribe(_topic);
+
+        // Defina um tempo limite para a operação de consumo
+        TimeSpan consumeTimeout = TimeSpan.FromSeconds(5);
+
+        while (!stoppingToken.IsCancellationRequested)
         {
-            var modelBytes = eventArgs.Body.ToArray();
-            var modelJson = Encoding.UTF8.GetString(modelBytes);
-            var model = JsonSerializer.Deserialize<Produto>(modelJson);
+            try
+            {
+                // Use o tempo limite na chamada de Consume
+                var consumeResult = consumer.Consume(consumeTimeout);
 
-            await PutAsync(model);
-            _logger.LogInformation($"Consumer > ExecuteAsync > Produto > ALTERAR_PRODUTO > ExecuteAsync - Redis... {model}");
+                // Se não houver mensagem, pausa antes de continuar
+                if (consumeResult == null)
+                {
+                    await Task.Delay(1000, stoppingToken); // Pausa de 1 segundo
+                    continue;
+                }
 
-            _channel.BasicAck(eventArgs.DeliveryTag, false);
-        };
-        _channel.BasicConsume(QUEUE_NAME, false, consumer);
-        return Task.CompletedTask;
-    }
+                var model = JsonSerializer.Deserialize<Produto>(consumeResult.Message.Value);
 
-    public async Task PutAsync(Produto model)
-    {
-        _logger.LogInformation("Consumer > ExecuteAsync > Produto > ALTERAR_PRODUTO > PutAsync - Redis...");
-        using (var scope = _serviceProvider.CreateScope())
-        {
-            var sendGridService = scope.ServiceProvider.GetRequiredService<IProdutoService>();
-            await sendGridService.Put(model);
-            _logger.LogInformation($"Consumer > ExecuteAsync > Produto > ALTERAR_PRODUTO > PutAsync - Redis... {model}");
+                using (var scope = _serviceScopeFactory.CreateScope())
+                {
+                    var produtoService = scope.ServiceProvider.GetRequiredService<IProdutoService>();
+                    await produtoService.Post(model);
+                }
+
+                _logger.LogInformation($"Mensagem consumida do tópico {_topic}: {consumeResult.Message.Value}");
+            }
+            catch (ConsumeException e)
+            {
+                _logger.LogError($"Erro ao consumir mensagem: {e.Error.Reason}");
+            }
         }
+
+        consumer.Close();
     }
 }
+

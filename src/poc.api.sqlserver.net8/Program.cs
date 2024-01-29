@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using poc.api.sqlserver.Configuration;
 using poc.api.sqlserver.EndPoints;
-using poc.api.sqlserver.Service.MessageBus;
 using poc.api.sqlserver.Service.Persistence;
 using poc.api.sqlserver.Service.Producer;
 using Serilog;
@@ -20,10 +19,7 @@ builder.Services.AddDbContext<SqlServerDb>(op => op.UseSqlServer(builder.Configu
 builder.Services.AddScoped<IProdutoService, ProdutoService>();
 
 // Bus
-builder.Services.AddScoped<IMessageBusService, MessageBusService>();
-builder.Services.AddSingleton<ICriarProdutoProducer, CriarProdutoProducer>();
-builder.Services.AddScoped<IAlterarProdutoProducer, AlterarProdutoProducer>();
-builder.Services.AddScoped<IRemoverProdutoProducer, RemoverProdutoProducer>();
+builder.Services.AddSingleton<IProdutoProducer, ProdutoProducer>();
 
 builder.Host.UseSerilog((context, config) =>
 {

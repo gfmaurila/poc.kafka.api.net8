@@ -8,16 +8,12 @@ namespace poc.api.sqlserver.Service.Persistence;
 public class ProdutoService : IProdutoService
 {
     private readonly SqlServerDb _db;
-    private readonly ICriarProdutoProducer _criarProducer;
-    private readonly IAlterarProdutoProducer _alterarProducer;
-    private readonly IRemoverProdutoProducer _removerProducer;
+    private readonly IProdutoProducer _producer;
 
-    public ProdutoService(SqlServerDb db, ICriarProdutoProducer criarProducer, IAlterarProdutoProducer alterarProducer, IRemoverProdutoProducer removerProducer)
+    public ProdutoService(SqlServerDb db, IProdutoProducer producer)
     {
         _db = db;
-        _criarProducer = criarProducer;
-        _alterarProducer = alterarProducer;
-        _removerProducer = removerProducer;
+        _producer = producer;
     }
 
     public async Task<List<Produto>> Get()
@@ -34,7 +30,7 @@ public class ProdutoService : IProdutoService
         await _db.Produto.AddAsync(entity);
         await _db.SaveChangesAsync();
 
-        await _criarProducer.Publish(entity);
+        await _producer.PublishCriar(entity);
 
         return entity;
     }
@@ -47,7 +43,7 @@ public class ProdutoService : IProdutoService
         _db.Produto.Update(entity);
         await _db.SaveChangesAsync();
 
-        _alterarProducer.Publish(entity);
+        await _producer.PublishAlterar(entity);
 
         return entity;
     }
@@ -62,7 +58,7 @@ public class ProdutoService : IProdutoService
         _db.Produto.Remove(entity);
         await _db.SaveChangesAsync();
 
-        _removerProducer.Publish(entity);
+        await _producer.PublishRemover(entity);
 
         return entity;
     }
