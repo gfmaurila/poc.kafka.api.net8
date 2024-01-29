@@ -26,7 +26,7 @@ public class CriarProdutoConsumer : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Consumer > ExecuteAsync > Produto > CRIAR_PRODUTO > Redis...");
+        _logger.LogInformation($"Consumer > ExecuteAsync > Produto > {_topic} > Redis...");
         using var consumer = new ConsumerBuilder<Ignore, string>(_config).Build();
         consumer.Subscribe(_topic);
 
@@ -49,11 +49,9 @@ public class CriarProdutoConsumer : BackgroundService
 
                 var model = JsonSerializer.Deserialize<Produto>(consumeResult.Message.Value);
 
-                using (var scope = _serviceScopeFactory.CreateScope())
-                {
-                    var produtoService = scope.ServiceProvider.GetRequiredService<IProdutoService>();
-                    await produtoService.Post(model);
-                }
+                using var scope = _serviceScopeFactory.CreateScope();
+                var produtoService = scope.ServiceProvider.GetRequiredService<IProdutoService>();
+                await produtoService.Post(model);
 
                 _logger.LogInformation($"Mensagem consumida do tópico {_topic}: {consumeResult.Message.Value}");
             }

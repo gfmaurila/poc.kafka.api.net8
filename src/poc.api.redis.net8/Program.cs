@@ -18,6 +18,7 @@ string redisConfiguration = builder.Configuration.GetSection("Redis:Configuratio
 builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConfiguration));
 
 // Bus
+//builder.Services.AddHostedService<ProdutoConsumer>();
 builder.Services.AddHostedService<CriarProdutoConsumer>();
 builder.Services.AddHostedService<AlterarProdutoConsumer>();
 builder.Services.AddHostedService<RemoverProdutoConsumer>();
