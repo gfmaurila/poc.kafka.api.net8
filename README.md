@@ -2,7 +2,7 @@
 ### API .NET Core 8 com Kafka e SQL Server
 
 ## Descrição
-Este projeto é uma prova de conceito (POC) que demonstra a implementação de uma API em .NET Core 8 integrada com Apache Kafka para processamento de mensagens em tempo real, SQL Server para persistência de dados, e Redis para armazenamento em cache. A infraestrutura do Kafka é gerenciada com Zookeeper, Kafka Connect, Schema Registry, e visualizada com Kafka UI. O projeto também utiliza MongoDB para armazenamento de logs com Serilog, tudo orquestrado com Docker e Docker Compose para facilitar a implantação e a escalabilidade.
+Este projeto é uma prova de conceito (POC) que demonstra a implementação de uma API em .NET Core 8 integrada com Apache Kafka para processamento de mensagens em tempo real, SQL Server para persistência de dados, e Redis para armazenamento em cache. A infraestrutura do Kafka é gerenciada com Zookeeper, e visualizada com kafdrop. O projeto também utiliza MongoDB para armazenamento de logs com Serilog, tudo orquestrado com Docker e Docker Compose para facilitar a implantação e a escalabilidade.
 
 ## Tecnologias Utilizadas
 - .NET Core 8
