@@ -8,10 +8,7 @@ Este projeto é uma prova de conceito (POC) que demonstra a implementação de u
 - .NET Core 8
 - SQL Server
 - Apache Kafka
-- Zookeeper
-- Kafka Connect
-- Schema Registry
-- Kafka UI
+- kafdrop
 - Redis
 - MongoDB
 - Serilog
